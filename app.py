@@ -1,14 +1,19 @@
+# Standard Library Imports
+import re
+
+# Third-Party Imports
 import streamlit as st
 import docx2txt
-import re
 from dotenv import load_dotenv
+from htmlTemplates import css, bot_template, user_template
+
+# Langchain Module Imports
 from langchain.text_splitter import CharacterTextSplitter
 from langchain.embeddings import OpenAIEmbeddings
 from langchain.vectorstores import FAISS
 from langchain.chat_models import ChatOpenAI
 from langchain.memory import ConversationBufferMemory
 from langchain.chains import ConversationalRetrievalChain
-from htmlTemplates import css, bot_template, user_template
 
 
 def get_docx_text(docx_text):
@@ -65,7 +70,8 @@ def get_chat_chain(vectorstore):
         "Job Title" for university job titles.
         "Job Category" for job families.
         "Level" for job grades.
-    Respond only based on the provided document. Use {vectorstore} tag when referencing document content    
+    Prioritize response based on the provided document. Use {vectorstore} tag when referencing document content
+    If there is no document provided response as OpenAI
     """
 
     memory = ConversationBufferMemory(memory_key='chat_history', return_messages=True, template=prompt_template)
@@ -79,7 +85,7 @@ def get_chat_chain(vectorstore):
 
 
 def handle_userinput(user_question):
-    response = st.session_state.conversation({'question': user_question})
+    response = st.session_state.chat({'question': user_question})
     st.session_state.chat_history = response['chat_history']
 
     for i, message in enumerate(st.session_state.chat_history):
@@ -104,8 +110,12 @@ def main():
 
     st.header("Chat with multiple Docx :bookmark_tabs:")
     user_question = st.text_input("Ask a question about your documents: ")
+    
     if user_question:
-        handle_userinput(user_question)
+        if st.session_state.chat is None:
+            st.error('Please upload documents')
+        else:
+            handle_userinput(user_question)
 
     with st.sidebar:
         st.subheader("Your documents")
