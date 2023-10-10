@@ -1,6 +1,5 @@
 import re
 
-import numpy as np
 import streamlit as st
 import docx2txt
 from dotenv import load_dotenv
